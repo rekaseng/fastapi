@@ -13,53 +13,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-class GenreURLChoices(Enum):
-    ROCK = 'rock'
-    ELECTRONIC = 'electronic'
-    METAL = 'metal'
-    HIP_HOP = 'hip-hop'
-
-BANDS = [
-    {'id': 1, 'name': 'The Kinks', 'genre': 'Rock'},
-    {'id': 2, 'name': 'Alpha Twin', 'genre': 'Electronic'},
-    {'id': 3, 'name': 'Black Sabbath', 'genre': 'Metal', 'albums':[
-        {'title': 'Master of Reality', 'release_date': '1971-07-21'}
-    ]},
-    {'id': 4, 'name': 'Wu-Tang Clan', 'genre': 'Hip-Hop'},
-]
-
-
-
-@app.get('/bands')
-async def bands(genre: GenreURLChoices | None = None,
-                q: Annotated[ str | None , Query(max_length=10)] = None,
-                session:Session = Depends(get_session)) -> list[Band]:
-    
-    band_list = session.exec(select(Band)).all()
-    if genre:
-        band_list = [
-            b for b in band_list if b.genre.value.lower() == genre.value
-        ]
-    if q:
-        band_list=[
-            b for b in band_list if q.lower() in b.name.lower()
-        ]
-    return band_list
-
-@app.get('/bands/{band_id}')
-async def band(band_id: Annotated[int, Path(title="The band ID")],
-               session:Session = Depends(get_session)) -> Band:
-    band = session.get(Band, band_id)
-    if band is None:
-        raise HTTPException(status_code=404, detail = 'Band not found')
-    return band
-
-@app.get('/bands/genre/{genre}')
-async def bands_for_genre(genre:GenreURLChoices) -> list[dict]:
-    return [
-        b for b in BANDS if b['genre'].lower() == genre.value
-    ]
-
+#CREATE (POST)
 @app.post("/bands")
 async def create_band(
     band_data: BandCreate,
@@ -76,6 +30,60 @@ async def create_band(
     session.commit()
     session.refresh(band)
     return band
+
+#READ (GET)
+@app.get('/bands')
+async def bands(genre: GenreURLChoices | None = None,
+                q: Annotated[ str | None , Query(max_length=10)] = None,
+                session:Session = Depends(get_session)) -> list[Band]:
+    
+    band_list = session.exec(select(Band)).all()
+    if genre:
+        band_list = [
+            b for b in band_list if b.genre.value.lower() == genre.value
+        ]
+    if q:
+        band_list=[
+            b for b in band_list if q.lower() in b.name.lower()
+        ]
+    return band_list
+
+#READ (GET)
+@app.get('/bands/{band_id}')
+async def band(band_id: Annotated[int, Path(title="The band ID")],
+               session:Session = Depends(get_session)) -> Band:
+    band = session.get(Band, band_id)
+    if band is None:
+        raise HTTPException(status_code=404, detail = 'Band not found')
+    return band
+
+#UPDATE (PUT)
+@app.put('/bands/{band_id}')
+async def band(band_id: Annotated[int, Path(title="The band ID")],
+               name:str, genre: str,
+               session:Session = Depends(get_session)) -> Band:
+    band = session.get(Band, band_id)
+    if band is None:
+        raise HTTPException(status_code=404, detail = 'Band not found')
+    band.name = name
+    band.genre = genre
+    session.commit()
+    return band
+
+#DELETE (DELETE)
+@app.delete('/bands/{band_id}')
+async def band(band_id: int,
+               session:Session = Depends(get_session)) -> Band:
+    band = session.get(Band, band_id)
+    if band is None:
+        raise HTTPException(status_code=404, detail = 'Band not found')
+    session.delete(band)
+    session.commit()
+    message = "Item deleted successfully"
+    return {"message": "Band deleted successfully"}
+
+
+
 
 
 
