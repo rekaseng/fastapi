@@ -10,7 +10,7 @@ Content-Type: application/json
             "release_date": "2023-01-01"
         },
         {
-              "title": "Music has the right to children",
+            "title": "Music has the right to chilren",
             "release_date": "2024-01-01"
         }
     ]
@@ -26,7 +26,7 @@ Content-Type: application/json
 }
 
 ###
-GET http://localhost:8000/bands/
+GET http://localhost:8000/bands
 
 ###
 GET http://localhost:8000/bands?genre=electronic
